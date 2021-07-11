@@ -1,0 +1,2 @@
+# newSTG
+STG作りたい
