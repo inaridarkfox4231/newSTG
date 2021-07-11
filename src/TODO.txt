@@ -1,0 +1,9 @@
+さしあたりやるべきこと
+SystemをPlayに改名して・・PlayStateの方がいいかな。
+で、Stateの派生にする
+bulletLang2ではなくなる感じだけどまあそこはそのままで
+TitleStateやGameoverStateやSelectStateやClearStateを用意
+そしてSystem
+そこまで全部あそこに書いちゃう
+そのうえでSystemを取り出してそこだけ運用する感じですかね・・
+背景とかも用意して・・わかんないけど
