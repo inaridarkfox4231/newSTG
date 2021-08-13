@@ -7,3 +7,8 @@ TitleStateやGameoverStateやSelectStateやClearStateを用意
 そこまで全部あそこに書いちゃう
 そのうえでSystemを取り出してそこだけ運用する感じですかね・・
 背景とかも用意して・・わかんないけど
+Stateとはupdateとdrawを持つものである、とする。
+
+現時点でグラフィック持ってないわね。。。。
+まじかよ
+じゃあグラフィック持たせてそこにdrawするように改造しないといけないわね・・
