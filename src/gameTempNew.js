@@ -107,11 +107,11 @@ class TitleScene extends Scene{
 function createTitleScene(gr){
   const SCALE = min(CANVAS_W, CANVAS_H);
   gr.background(220);
-  gr.textSize(SCALE * 0.1);
+  gr.textSize(SCALE * 0.06);
   gr.textAlign(CENTER, CENTER);
   gr.fill(0);
-  gr.text("TITLE", CANVAS_W * 0.5, CANVAS_H * 0.4);
-  gr.text("--- CLICK TO PLAY ---", CANVAS_W * 0.5, CANVAS_H * 0.6);
+  gr.text("ここにタイトル", CANVAS_W * 0.5, CANVAS_H * 0.4);
+  gr.text("--- クリックするとプレイ画面に遷移 ---", CANVAS_W * 0.5, CANVAS_H * 0.6);
 }
 
 // --------------------------------------------------------------------------------------- //
@@ -176,3 +176,16 @@ function draw(){
 
 // --------------------------------------------------------------------------------------- //
 // Utility.（使い方をわかりやすく明記）
+
+// --------------------------------------------------------------------------------------- //
+// Interaction.（クリックやキー入力の関数）
+
+function keyPressed(){
+  myGame.currentScene.keyAction(keyCode);
+	return false;
+}
+
+function mouseClicked(){
+	myGame.currentScene.clickAction();
+	return false;
+}
