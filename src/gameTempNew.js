@@ -37,6 +37,7 @@ class Game{
     this.scenes.play = new PlayScene(this);
     this.scenes.clear = new ClearScene(this);
     this.scenes.gameover = new GameoverScene(this);
+    this.currentScene = this.scenes.title;
   }
   getScene(sceneName){
     if(sceneName === ""){ return undefined; }
@@ -75,8 +76,8 @@ class Scene{
   getNextScene(){ return this.nextScene; }
   setNextScene(sceneName){ this.nextScene = this.node.getScene(sceneName); }
   prepare(_scene){ /* 前のシーンの情報を元に何かする */ }
-  keyAction(code){} // キーイベント
-	clickAction(){} // マウスクリックイベント
+  keyAction(code){ /* キーイベント */}
+	clickAction(){ /* マウスクリックイベント */ }
 	update(){}
 	draw(){}
 }
@@ -84,17 +85,67 @@ class Scene{
 // --------------------------------------------------------------------------------------- //
 // TitleScene.
 
+class TitleScene extends Scene{
+  constructor(_node){
+    super(_node);
+    this.name = "title";
+    createTitleScene(this.gr);
+  }
+  keyAction(code){}
+	clickAction(){}
+  update(){
+    // タイトルアニメーションとかですかね
+  }
+  draw(){
+    image(this.gr, 0, 0);
+  }
+}
+
+// --------------------------------------------------------------------------------------- //
+// Global functions for TitleScene.
+
+function createTitleScene(gr){
+  const SCALE = min(CANVAS_W, CANVAS_H);
+  gr.background(220);
+  gr.textSize(SCALE * 0.1);
+  gr.textAlign(CENTER, CENTER);
+  gr.fill(0);
+  gr.text("TITLE", CANVAS_W * 0.5, CANVAS_H * 0.4);
+  gr.text("--- CLICK TO PLAY ---", CANVAS_W * 0.5, CANVAS_H * 0.6);
+}
+
 // --------------------------------------------------------------------------------------- //
 // PlayScene.
+
+class PlayScene extends Scene{
+  constructor(_node){
+    super(_node);
+    this.name = "play";
+  }
+}
 
 // --------------------------------------------------------------------------------------- //
 // ClearScene.
 
+class ClearScene extends Scene{
+  constructor(_node){
+    super(_node);
+    this.name = "clear";
+  }
+}
+
 // --------------------------------------------------------------------------------------- //
 // GameoverScene.
 
+class GameoverScene extends Scene{
+  constructor(_node){
+    super(_node);
+    this.name = "gameover";
+  }
+}
+
 // --------------------------------------------------------------------------------------- //
-// System.
+// System.（PlaySceneの中身）
 
 class System{
 
@@ -104,19 +155,22 @@ class System{
 // preloading.
 
 function preload(){
-
+  // 種類ごとに処理を分けた方がいいかも
 }
 
 // --------------------------------------------------------------------------------------- //
 // Main.
 
 function setup(){
+  createCanvas(CANVAS_W, CANVAS_H);
   myGame = new Game();
   myGame.createScenes(); // シーンを作る
 }
 
 function draw(){
-
+  myGame.update();
+  myGame.draw();
+  myGame.shift();
 }
 
 
