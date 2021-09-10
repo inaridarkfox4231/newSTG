@@ -79,7 +79,7 @@ class Scene{
   }
   getNextScene(){ return this.nextScene; }
   setNextScene(sceneName){ this.nextScene = this.node.getScene(sceneName); }
-  prepare(_scene = undefined){ /* 前のシーンの情報を元に何かする */ }
+  prepare(_scene = undefined){ /* 遷移時に必ず実行される。前のシーンの情報を元に何かする */ }
   keyAction(code){ /* キーイベント */}
 	clickAction(){ /* マウスクリックイベント */ }
 	update(){}
@@ -94,7 +94,7 @@ class TitleScene extends Scene{
     super(_node);
     this.name = "title";
     createTitleScene(this.gr);
-    this.prepare();
+    this.prepare(); // ノードステートなので・・ロゴが入るならここには何も書かないかも。
   }
   prepare(_scene = undefined){
     createTitleScene(this.gr);
@@ -158,6 +158,10 @@ class PlayScene extends Scene{
 
 // --------------------------------------------------------------------------------------- //
 // System.（PlaySceneの中身）
+// とりあえず簡潔に。3秒以内に10回クリックするだけの簡単なゲーム。
+// 弾幕を一定時間よけ続けるとか、
+// 自動生成された迷路を潜り抜けるとか、
+// いろいろね。シューティングでもいいし。
 
 class System{
   constructor(){
@@ -275,6 +279,7 @@ class GameoverScene extends Scene{
 
 // --------------------------------------------------------------------------------------- //
 // preloading.
+// まあ基本的にはアセットを配置する形の方がいいんでしょうね。サンプル作るなら図形描画でいいんだけど。
 
 function preload(){
   // 種類ごとに処理を分けた方がいいかも
