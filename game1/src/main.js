@@ -13,8 +13,8 @@ let myGame;
 // Constants.（各種定数）
 
 // キャンバスサイズ
-const CANVAS_W = 640;
-const CANVAS_H = 480;
+const CANVAS_W = 480;
+const CANVAS_H = 640;
 
 // KEYCODE定数
 const K_ENTER = 13;
@@ -122,7 +122,7 @@ function createTitleScene(gr){
   gr.textAlign(CENTER, CENTER);
   gr.fill(0);
   gr.text("ここにタイトル", CANVAS_W * 0.5, CANVAS_H * 0.4);
-  gr.text("--- クリックするとプレイ画面に遷移 ---", CANVAS_W * 0.5, CANVAS_H * 0.6);
+  gr.text("--- クリックする ---", CANVAS_W * 0.5, CANVAS_H * 0.6);
 }
 
 // --------------------------------------------------------------------------------------- //
@@ -164,9 +164,6 @@ class System{
   constructor(){
     this.gr = createGraphics(CANVAS_W, CANVAS_H);
     this.graphicPreparation();
-    this.goal = 10;
-    this.count = 0;
-    this.rest = 300;
   }
   graphicPreparation(){
     const SCALE = min(CANVAS_W, CANVAS_H);
@@ -175,38 +172,103 @@ class System{
     this.gr.noStroke();
   }
   initialize(){
-    this.count = 0;
-    this.rest = 180;
   }
   keyAction(_play){
 
   }
   clickAction(_play){
-    this.count++;
-    if(this.count === this.goal){ _play.setNextScene("clear"); }
   }
   update(_play){
-    this.rest--;
-    if(this.rest === 0){ _play.setNextScene("gameover"); }
   }
   draw(){
     clear();
-    this.gr.background(255, 220, 220);
-    this.gr.fill(0);
-    this.gr.text("3秒以内に10回クリック出来ればクリア！", CANVAS_W * 0.5, CANVAS_H * 0.2);
-    this.gr.text("できなかったらゲームオーバーです。", CANVAS_W * 0.5, CANVAS_H * 0.3);
-    this.gr.text("rest:", CANVAS_W * 0.3, CANVAS_H * 0.4);
-    this.gr.fill(0, 0, 255);
-    this.gr.rect(CANVAS_W * 0.3, CANVAS_H * 0.45, this.rest, CANVAS_H * 0.05);
-    this.gr.fill(128);
-    for(let i = 0; i < this.goal; i++){
-      this.gr.rect(CANVAS_W * (0.3 + i * 0.04), CANVAS_H * 0.55, CANVAS_W * 0.03, CANVAS_H * 0.05);
-    }
-    this.gr.fill(0, 128, 255);
-    for(let i = 0; i < this.count; i++){
-      this.gr.rect(CANVAS_W * (0.3 + i * 0.04), CANVAS_H * 0.55, CANVAS_W * 0.03, CANVAS_H * 0.05);
-    }
     image(this.gr, 0, 0);
+  }
+}
+
+// --------------------------------------------------------------------------------------- //
+// Player.
+// 十字キーで動かす。弾をかわす。ステージ最初にライフ設定60で、当たっている間減り続ける感じ。
+// 当たっているときにパーティクルを出す。つまり当たっている時間の累計が60になったらアウトね。ブリンクは無し。
+
+class Player{
+  constructor(){
+
+  }
+}
+
+// --------------------------------------------------------------------------------------- //
+// Bullet.
+// 弾丸。画像貼り付けでバリエーション。もしくは図形が回転する感じで。もしくは連続アニメーションでもいいかも（4フレームx8枚とか）
+// 円判定。プレーヤーにあたっても消滅しない。バリエーションはまた別のカテゴリーで。。
+
+class Bullet{
+  constructor(){
+    
+  }
+}
+
+// --------------------------------------------------------------------------------------- //
+// Pattern.
+
+// --------------------------------------------------------------------------------------- //
+// CollisionSystem.
+// プレイヤーとブレットの円判定。プレイヤーとブレットだけなので総当たりでいいですね。
+// まあ後回しかな・・
+
+// --------------------------------------------------------------------------------------- //
+// Particle.
+
+// これひとつで複数のパーティクルの出現モーションになってる
+// 連続して発生することを考慮してarrayってわけね
+// 改良点としては三角形とかバリエーション作るあたりかな。。星形も難しくなさそう。
+// 確かそういうバリエーション考えたけど本質的でないってことで後回しにした記憶。
+class Particle{
+	constructor(x, y, size, _color, life = 60, speed = 4, count = 20){
+    this.color = {r:red(_color), g:green(_color), b:blue(_color)};
+		this.center = {x:x, y:y};
+		this.size = size;
+		this.life = life;
+		this.speed = speed;
+		this.count = count + random(-5, 5);
+		this.rotationAngle = 0;
+		this.rotationSpeed = 4;
+		this.moveSet = [];
+		this.prepareMoveSet();
+		this.alive = true;
+	}
+	prepareMoveSet(){
+		for(let i = 0; i < this.count; i++){
+			this.moveSet.push({x:0, y:0, speed:this.speed + random(-2, 2), direction:random(360)});
+		}
+	}
+	update(){
+		if(!this.alive){ return; }
+		this.moveSet.forEach((z) => {
+			z.x += z.speed * cos(z.direction);
+			z.y += z.speed * sin(z.direction);
+			z.speed *= 0.9;
+		})
+		this.rotationAngle += this.rotationSpeed;
+		this.life--;
+		if(this.life === 0){ this.alive = false; }
+	}
+	draw(){
+		if(!this.alive){ return; }
+		stroke(this.color.r, this.color.g, this.color.b, this.life * 4);
+		const c = cos(this.rotationAngle) * this.size;
+		const s = sin(this.rotationAngle) * this.size;
+		this.moveSet.forEach((z) => {
+			const cx = this.center.x + z.x;
+			const cy = this.center.y + z.y;
+      quad(cx + c, cy + s, cx - s, cy + c, cx - c, cy - s, cx + s, cy - c);
+		})
+	}
+  eject(){
+    if(!this.alive){ this.vanishAction(); }
+  }
+  vanishAction(){
+    this.belongingArray.remove(this);
   }
 }
 
@@ -225,7 +287,7 @@ class ClearScene extends Scene{
     this.gr.fill(0);
     this.gr.textAlign(CENTER, CENTER);
     this.gr.text("クリアおめでとう！", CANVAS_W * 0.5, CANVAS_H * 0.45);
-    this.gr.text("タイトル画面に戻るにはクリックしてください", CANVAS_W * 0.5, CANVAS_H * 0.55);
+    this.gr.text("クリックしてください", CANVAS_W * 0.5, CANVAS_H * 0.55);
   }
   keyAction(){
 
@@ -257,7 +319,7 @@ class GameoverScene extends Scene{
     this.gr.fill(0);
     this.gr.textAlign(CENTER, CENTER);
     this.gr.text("ゲームオーバー...", CANVAS_W * 0.5, CANVAS_H * 0.45);
-    this.gr.text("タイトル画面に戻るにはクリックしてください", CANVAS_W * 0.5, CANVAS_H * 0.55);
+    this.gr.text("クリックしてください", CANVAS_W * 0.5, CANVAS_H * 0.55);
   }
   keyAction(){
 
@@ -287,6 +349,7 @@ function preload(){
 
 function setup(){
   createCanvas(CANVAS_W, CANVAS_H);
+  angleMode(DEGREES); // 度数法でおねがい。
   myGame = new Game();
   myGame.createScenes(); // シーンを作る
 }
@@ -300,6 +363,50 @@ function draw(){
 
 // --------------------------------------------------------------------------------------- //
 // Utility.（使い方をわかりやすく明記）
+
+// Simple Cross Reference Array.
+// 改造する前のやつ。
+// add:要素を追加する。追加時に要素に所属配列への参照が付与される。
+// addMulti:要素を複数まとめて追加する。
+// remove:要素側から配列からの離脱をさせる
+// loop:特定の処理をすべての要素に対して行う。具体的には要素としてのクラスのメソッド名・・
+// これ引数があってもできるようにすべきかなぁ。改良する必要性・・arg使えばできそう。
+// loopReverse:削除などの処理をまとめて行う場合はこちら
+// clear:配列を空にする。初期化などの際に使う。
+class SimpleCrossReferenceArray extends Array{
+	constructor(){
+    super();
+	}
+  add(element){
+    this.push(element);
+    element.belongingArray = this; // 所属配列への参照
+  }
+  addMulti(elementArray){
+    // 複数の場合
+    elementArray.forEach((element) => { this.add(element); })
+  }
+  remove(element){
+    let index = this.indexOf(element, 0);
+    this.splice(index, 1); // elementを配列から排除する
+  }
+  loop(methodName){
+		if(this.length === 0){ return; }
+    // methodNameには"update"とか"display"が入る。まとめて行う処理。
+		for(let i = 0; i < this.length; i++){
+			this[i][methodName]();
+		}
+  }
+	loopReverse(methodName){
+		if(this.length === 0){ return; }
+    // 逆から行う。排除とかこうしないとエラーになる。もうこりごり。
+		for(let i = this.length - 1; i >= 0; i--){
+			this[i][methodName]();
+		}
+  }
+	clear(){
+		this.length = 0;
+	}
+}
 
 // --------------------------------------------------------------------------------------- //
 // Interaction.（クリックやキー入力の関数）
