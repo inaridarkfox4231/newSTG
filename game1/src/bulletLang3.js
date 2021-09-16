@@ -292,22 +292,47 @@ class System{
     this.unitArray.loopReverse("eject");
     this.particleArray.loopReverse("eject");
   }
-	draw(){
-    background(this.backgroundColor); // こっちで背景色設定
-		this.player.draw();
+	draw(gr){
+    gr.background(this.backgroundColor); // こっちで背景色設定
+		this.player.draw(gr);
     Object.keys(this.drawGroup).forEach((name) => {
       //if(name !== "laser"){ fill(this.drawColor[name]); }
-      fill(this.drawColor[name]);
-      this.drawGroup[name].loop("draw"); // 色別に描画(laserは別立て)
+      gr.fill(this.drawColor[name]);
+      this.drawGroup[name].loop("draw", [gr]); // 色別に描画(laserは別立て)
     })
     // particleの描画(noStroke()を忘れないこと)
-    noFill();
-    strokeWeight(2.0);
-    this.particleArray.loop("draw");
-    noStroke();
+    gr.noFill();
+    gr.strokeWeight(2.0);
+    this.particleArray.loop("draw", [gr]);
+    gr.noStroke();
 	}
   getCapacity(){
     return this.unitArray.length;
+  }
+  getFinishFlag(){
+    // PLAYER, PLAYER_BULLET以外の全ユニットが消えたら1を返す
+    // PLAYERが消えたら2を返す。
+    // それ以外の場合は0を返す。
+    // アルゴリズムとしてはユニットをすべて走査してPLAYERかPLAYER_BULLET以外のなんかがみつかったらIS_CLEARをfalseに
+    // PLAYERが見つかったらIS_GAMEOVERをfalseにする
+    // この2つがtrueになるのは画面内にPLAYER_BULLETしか存在しない場合に限るね。んー。その場合もGAMEOVERにしたいね。
+    // それには判定順を考える。まずIS_GAMEOVERがtrueかどうか見てtrueならreturn 2;
+    // そのあとでIS_CLEARかどうか見てtrueならreturn 1;
+    // そのあとでreturn 0;すればOK.
+    let _IS_CLEAR = true;
+    let _IS_GAMEOVER = this.player.isDead();
+    for(let u of this.unitArray){
+      const flag = u.getCollisionFlag();
+      if((flag !== PLAYER) && (flag !== PLAYER_BULLET)){
+        _IS_CLEAR = false;
+      }
+    }
+    if(_IS_GAMEOVER){
+      return 2;
+    }else if(_IS_CLEAR){
+      return 1;
+    }
+    return 0;
   }
   registUnitColors(){
     // 第3引数：damageFactor, 第4引数：lifeFactor. バランス調整が課題。
@@ -422,6 +447,14 @@ class SelfUnit{
     this.prepareWeapon(weaponData);
 		this.initialize();
 	}
+  getCollisionFlag(){
+    // collisionFlagのゲッター無かったのね
+    return this.collisionFlag;
+  }
+  isDead(){
+    // 死んでるかどうか（直球）
+    return this.vanish;
+  }
   prepareWeapon(weaponData){
     for(let i = 0; i < weaponData.length; i++){
       const myPtn = parsePatternSeed(weaponData[i]);
@@ -538,22 +571,22 @@ class SelfUnit{
 		this.position.x = constrain(this.position.x, 5, AREA_WIDTH - 5);
 		this.position.y = constrain(this.position.y, 5, AREA_HEIGHT - 5);
 	}
-	draw(){
+	draw(gr){
     if(this.vanish){ return; }
 		const {x, y} = this.position;
 		const c = cos(this.rotationAngle) * this.size;
 		const s = sin(this.rotationAngle) * this.size;
 		//stroke(this.bodyColor);
-    stroke(this.color);
-		noFill();
-		strokeWeight(2);
-		quad(x + c, y + s, x - s, y + c, x - c, y - s, x + s, y - c);
-    noStroke();
-    fill(this.color);
-    ellipse(x, y, 10, 10); // 直径10. 半径は5. ここが当たり判定。
+    gr.stroke(this.color);
+		gr.noFill();
+		gr.strokeWeight(2);
+		gr.quad(x + c, y + s, x - s, y + c, x - c, y - s, x + s, y - c);
+    gr.noStroke();
+    gr.fill(this.color);
+    gr.ellipse(x, y, 10, 10); // 直径10. 半径は5. ここが当たり判定。
     // ライフゲージ。
     const l = this.life * this.size * 2 / this.maxLife;
-    rect(this.position.x - l / 2, this.position.y + this.size * 1.5, l, 5);
+    gr.rect(this.position.x - l / 2, this.position.y + this.size * 1.5, l, 5);
 	}
 }
 
@@ -613,6 +646,10 @@ class Unit{
     else{ /* Check(必要なら) */ this.collider.update(0, 0, 0); }
     // bindプロパティがtrueの場合、parentがvanishしたらactionをしないでvanishして切り上げる
     this.bind = false;
+  }
+  getCollisionFlag(){
+    // collisionFlagのゲッター無かったのね
+    return this.collisionFlag;
   }
   setPosition(x, y){
     this.position.set(x, y);
@@ -763,14 +800,14 @@ class Unit{
       }
     }
   }
-  draw(){
+  draw(gr){
     if(this.hide || this.vanish){ return; } // hide === trueのとき描画しない
     //this.drawModule.draw(this);
-    this.shape.draw(this);
+    this.shape.draw(this, gr);
     if(this.collisionFlag === ENEMY){
       // ライフゲージ（割合表示）
       const l = this.life * this.shape.size * 2 / this.maxLife;
-      rect(this.position.x - l / 2, this.position.y + this.shape.size * 1.5, l, 5);
+      gr.rect(this.position.x - l / 2, this.position.y + this.shape.size * 1.5, l, 5);
     }
   }
 }
@@ -850,15 +887,15 @@ class Particle{
 		this.life--;
 		if(this.life === 0){ this.alive = false; }
 	}
-	draw(){
+	draw(gr){
 		if(!this.alive){ return; }
-		stroke(this.color.r, this.color.g, this.color.b, this.life * 4);
+		gr.stroke(this.color.r, this.color.g, this.color.b, this.life * 4);
 		const c = cos(this.rotationAngle) * this.size;
 		const s = sin(this.rotationAngle) * this.size;
 		this.moveSet.forEach((z) => {
 			const cx = this.center.x + z.x;
 			const cy = this.center.y + z.y;
-      quad(cx + c, cy + s, cx - s, cy + c, cx - c, cy - s, cx + s, cy - c);
+      gr.quad(cx + c, cy + s, cx - s, cy + c, cx - c, cy - s, cx + s, cy - c);
 		})
 	}
   eject(){
@@ -882,7 +919,7 @@ class DrawShape{
     this.colliderType = "";
   }
   set(unit){ /* drawParamに描画用のプロパティを準備 */}
-  draw(unit){ /* 形の描画関数 */ }
+  draw(unit, gr){ /* 形の描画関数 */ }
 }
 
 // drawWedge
@@ -903,12 +940,12 @@ class DrawWedgeShape extends DrawShape{
     unit.collider.update(unit.position.x, unit.position.y, this.size);
     return;
   }
-  draw(unit){
+  draw(unit, gr){
     const {x, y} = unit.position;
     const direction = unit.direction;
     const dx = cos(direction);
     const dy = sin(direction);
-    triangle(x + this.h * dx,          y + this.h * dy,
+    gr.triangle(x + this.h * dx,          y + this.h * dy,
              x - this.h * dx + this.b * dy, y - this.h * dy - this.b * dx,
              x - this.h * dx - this.b * dy, y - this.h * dy + this.b * dx);
   }
@@ -927,13 +964,13 @@ class DrawDiaShape extends DrawShape{
     // colliderInitialize.
     unit.collider.update(unit.position.x, unit.position.y, this.size * 0.75);
   }
-  draw(unit){
+  draw(unit, gr){
     const {x, y} = unit.position;
     const {direction} = unit;
     const c = cos(direction);
     const s = sin(direction);
     const r = this.size;
-    quad(x + r * c, y + r * s, x + 0.5 * r * s, y - 0.5 * r * c,
+    gr.quad(x + r * c, y + r * s, x + 0.5 * r * s, y - 0.5 * r * c,
          x - r * c, y - r * s, x - 0.5 * r * s, y + 0.5 * r * c);
   }
 }
@@ -955,13 +992,13 @@ class DrawRectShape extends DrawShape{
     // colliderInitialize.
     unit.collider.update(unit.position.x, unit.position.y, this.size);
   }
-  draw(unit){
+  draw(unit, gr){
     // unit.directionの方向に長い長方形
     const {x, y} = unit.position;
     const {direction} = unit;
     const c = cos(direction);
     const s = sin(direction);
-    quad(x + c * this.h + s * this.w, y + s * this.h - c * this.w,
+    gr.quad(x + c * this.h + s * this.w, y + s * this.h - c * this.w,
          x + c * this.h - s * this.w, y + s * this.h + c * this.w,
          x - c * this.h - s * this.w, y - s * this.h + c * this.w,
          x - c * this.h + s * this.w, y - s * this.h - c * this.w);
@@ -985,11 +1022,11 @@ class DrawSquareShape extends DrawShape{
     unit.collider.update(unit.position.x, unit.position.y, this.size);
     unit.drawParam = {rotationAngle:45, rotationSpeed:2};
   }
-  draw(unit){
+  draw(unit, gr){
     const {x, y} = unit.position;
     const c = cos(unit.drawParam.rotationAngle) * this.size;
     const s = sin(unit.drawParam.rotationAngle) * this.size;
-    quad(x + c, y + s, x - s, y + c, x - c, y - s, x + s, y - c);
+    gr.quad(x + c, y + s, x - s, y + c, x - c, y - s, x + s, y - c);
     unit.drawParam.rotationAngle += unit.drawParam.rotationSpeed;
   }
 }
@@ -1011,7 +1048,7 @@ class DrawStarShape extends DrawShape{
     unit.collider.update(unit.position.x, unit.position.y, this.size * 1.2); // ちょっと大きく
     unit.drawParam = {rotationAngle:0, rotationSpeed:2};
   }
-  draw(unit){
+  draw(unit, gr){
     const {x, y} = unit.position;
     const r = this.size;
     const direction = unit.drawParam.rotationAngle;
@@ -1027,8 +1064,8 @@ class DrawStarShape extends DrawShape{
   	}
     v.push(...[x - r * c, y - r * s]);
     // u1 u4 v(三角形), u0 u2 v u3(鋭角四角形).
-    triangle(u[1][0], u[1][1], u[4][0], u[4][1], v[0], v[1]);
-    quad(u[0][0], u[0][1], u[2][0], u[2][1], v[0], v[1], u[3][0], u[3][1]);
+    gr.triangle(u[1][0], u[1][1], u[4][0], u[4][1], v[0], v[1]);
+    gr.quad(u[0][0], u[0][1], u[2][0], u[2][1], v[0], v[1], u[3][0], u[3][1]);
     unit.drawParam.rotationAngle += unit.drawParam.rotationSpeed;
   }
 }
@@ -1047,14 +1084,14 @@ class DrawDoubleWedgeShape extends DrawShape{
     unit.collider.update(unit.position.x, unit.position.y, this.size); // 本来の大きさで。
     unit.drawParam = {rotationAngle:0, rotationSpeed:4};
   }
-  draw(unit){
+  draw(unit, gr){
     const {x, y} = unit.position;
     const direction = unit.drawParam.rotationAngle
     const c = cos(direction) * this.size;
     const s = sin(direction) * this.size;
-    quad(x + c, y + s, x - 0.5 * c + ROOT_THREE_HALF * s, y - 0.5 * s - ROOT_THREE_HALF * c,
+    gr.quad(x + c, y + s, x - 0.5 * c + ROOT_THREE_HALF * s, y - 0.5 * s - ROOT_THREE_HALF * c,
              x,     y, x - 0.5 * c - ROOT_THREE_HALF * s, y - 0.5 * s + ROOT_THREE_HALF * c);
-    quad(x - c, y - s, x + 0.5 * c + ROOT_THREE_HALF * s, y + 0.5 * s - ROOT_THREE_HALF * c,
+    gr.quad(x - c, y - s, x + 0.5 * c + ROOT_THREE_HALF * s, y + 0.5 * s - ROOT_THREE_HALF * c,
              x,     y, x + 0.5 * c - ROOT_THREE_HALF * s, y + 0.5 * s + ROOT_THREE_HALF * c);
     unit.drawParam.rotationAngle += unit.drawParam.rotationSpeed;
   }
@@ -1075,13 +1112,13 @@ class DrawCherryShape extends DrawShape{
     unit.collider.update(unit.position.x, unit.position.y, this.size); // 本来の大きさで。
     unit.drawParam = {rotationAngle:0, rotationSpeed:4};
   }
-  draw(unit){
+  draw(unit, gr){
     const {x, y} = unit.position;
     const direction = unit.drawParam.rotationAngle;
     const c = cos(direction) * this.size * 0.75;
     const s = sin(direction) * this.size * 0.75;
     for(let i = 0; i < 5; i++){
-      arc(x + c * COS_PENTA[i] - s * SIN_PENTA[i], y + c * SIN_PENTA[i] + s * COS_PENTA[i],
+      gr.arc(x + c * COS_PENTA[i] - s * SIN_PENTA[i], y + c * SIN_PENTA[i] + s * COS_PENTA[i],
           this.size, this.size, 45 + 72 * i + direction, 315 + 72 * i + direction);
     }
     unit.drawParam.rotationAngle += unit.drawParam.rotationSpeed;
