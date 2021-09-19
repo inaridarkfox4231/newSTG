@@ -17,7 +17,7 @@ const SIN_PENTA = [0, 0.9510565162951535, 0.5877852522924732, -0.587785252292473
 const ROOT_THREE_HALF = 0.8660254037844386; // √3/2.
 
 // --------------------------------------------------------------------------------------- //
-// Constants.（各種定数）
+// main constants.
 
 // キャンバスサイズ
 const CANVAS_W = 480;
@@ -43,3 +43,10 @@ const DEFAULT_PATTERN_INDEX = 0;
 const IS_IN_BATTLE = 0;
 const IS_CLEAR = 1;
 const IS_GAMEOVER = 2;
+
+// --------------------------------------------------------------------------------------- //
+// component constants.
+// ボタン関連など
+
+const BUTTON_EXPAND_DURATION = 15; // ボタンが大きくなるまでにかかるフレーム数
+const BUTTON_EXPAND_RATIO = 1.1; // ボタンが大きくなるのでその比率

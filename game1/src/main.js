@@ -96,13 +96,24 @@ class TitleScene extends Scene{
     super(_node);
     this.name = "title";
     createTitleScene(this.gr);
+    this.btnSet = getButtonSetForSTG(); // ボタンセットを取得
+    this.buttonIndex = -1; // updateで更新される。エンターキーを押すときここが-1でないなら・・
     this.prepare(); // ノードステートなので・・ロゴが入るならここには何も書かないかも。
   }
   prepare(_scene = undefined){
     createTitleScene(this.gr);
+    this.btnSet.reset(); // リセットして大きさとか戻す
+    this.resetButtonIndex();
+  }
+  resetButtonIndex(){
+    this.buttonIndex = -1;
+  }
+  getButtonIndex(){
+    // play側で取得してどのステージにするのか決める感じ
+    return this.buttonIndex;
   }
   keyAction(code){
-    if(code === K_ENTER){ this.setNextScene("play"); }
+    if(code === K_ENTER && this.buttonIndex >= 0){ this.setNextScene("play"); }
   }
 	clickAction(){
   }
@@ -110,9 +121,11 @@ class TitleScene extends Scene{
     // タイトルアニメーションとかですかね。
     // その場合背景とは別にイメージを用意してそっちを更新しつつレイヤーごとに描画ってなると思う。
     // そっちをテンプレにすべきかどうか思案。というか背景が更新される形？んんん・・
+    this.buttonIndex = this.btnSet.getButtonIndex(mouseX, mouseY);
   }
   draw(){
     clear();
+    this.btnSet.draw(this.gr);
     image(this.gr, 0, 0);
   }
 }
@@ -126,8 +139,8 @@ function createTitleScene(gr){
   gr.textSize(SCALE * 0.06);
   gr.textAlign(CENTER, CENTER);
   gr.fill(0);
-  gr.text("title", CANVAS_W * 0.5, CANVAS_H * 0.45);
-  gr.text("press enter...", CANVAS_W * 0.5, CANVAS_H * 0.55);
+  gr.text("title", CANVAS_W * 0.5, CANVAS_H * 0.25);
+  gr.text("press enter...", CANVAS_W * 0.5, CANVAS_H * 0.35);
 }
 
 // --------------------------------------------------------------------------------------- //
@@ -142,56 +155,14 @@ class PlayScene extends Scene{
     this.generatePattern();
   }
   generatePattern(){
-    let weaponData = [];
-    let weaponCapacity = 0;
+    // プレイヤーの武器を用意する。別コード。
+    this._system.createPlayer(getWeaponSeeds());
 
-    // プレイヤーの攻撃パターン作成
-    // デフォルト。黒い弾丸をいっぱい。
-    weaponData[weaponCapacity++] = {
-      action:{
-        main:[{shotDistance:["set", 25]}, {shotAction:"go"}, {catch:"a"}, {nway:{count:4, interval:40}},
-              {wait:4}, {loop:INF, back:"a"}],
-  		  go:[{direction:["set", -90]}]
-      }
-    };
-
-  	// 武器を追加するならこの辺になんか書く
-  	// fire命令がスペースキーを押している間だけ次の命令に進むようになっている仕組み。
-
-  	// 鞭
-  	weaponData[weaponCapacity++] = {
-  		color:"blue",
-  		action:{
-  			main:[{deco:{color:"blue", shape:"rectSmall"}}, {catch:"a"}, {radial:{count:6}},
-  						{wait:3}, {shotDirection:["add", [-15, 15]]}, {loop:INF, back:"a"}]
-  		}
-  	}
-
-  	// ばらばらショット
-  	weaponData[weaponCapacity++] = {
-  		color:"green",
-  		action:{
-  			main:[{deco:{color:"green", shape:"starSmall"}}, {catch:"a"}, {fire:""},
-              {shotDirection:["set", [0, 360]]}, {wait:1}, {loop:INF, back:"a"}]
-  		}
-  	}
-
-  	// 思いつかない
-
-    this._system.createPlayer(weaponData);
-
-    // 新しいcircularの実験中。FALさんの4を書き直し。
-    // shotDirectionの初期設定は撃ちだした瞬間の進行方向。
-    this._system.addPatternSeed({
-      x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgColor:"white", color:"green",
-      action:{
-        main:[{shotAction:"sweeping"}, {deco:{color:"black", shape:"rectSmall"}}, {radial:{count:4}}],
-        sweeping:[{speed:["set", 0.001, 30]}, {move:"circular", bearing:-3},
-                  {bind:true}, {shotDirection:["rel", 0]},
-                  {shotSpeed:["set", 4]}, {deco:{color:"red", shape:"rectSmall"}},
-                  {catch:"a"}, {fire:""}, {wait:1}, {shotDirection:["add", 12]}, {loop:INF, back:"a"}]
-      }
-    });
+    // ステージのデータを取得する。別コード。
+    let seeds = getPatternSeeds();
+    for(let seed of seeds){
+      this._system.addPatternSeed(seed);
+    }
   }
   prepare(_scene = undefined){
     // ここでパターンを読み込む感じ。
@@ -205,11 +176,14 @@ class PlayScene extends Scene{
   	// systemの初期化でいくつか画像用意してそれを使うとかでいいんじゃない。で、色名の代わりにプリセット0とか1とかで指定する感じで。
   	// それが嫌ならこっちで画像を個別に作ってmySystemに登録できる仕組みを整えるのもありね。setupでこっちでいろいろやる。
 
-    this._system.setPattern(DEFAULT_PATTERN_INDEX);
+    const stageIndex = _scene.getButtonIndex();
+
+    this._system.setPattern(stageIndex);
   }
   keyAction(code){
     // systemに丸投げの方が再利用性高いんじゃないかな。ここに個別の処理書いちゃうのはまずいかも。んー。
     // でも遷移とかあれだね・・じゃあ遷移するかどうかのフラグを受け取ることにするかな。
+    // 再利用性を考えたときにこの方が・・ね。
     this.setNextScene(this._system.keyAction(code));
   }
   clickAction(){
@@ -361,7 +335,21 @@ function draw(){
 
 
 // --------------------------------------------------------------------------------------- //
-// Utility.（使い方をわかりやすく明記）
+// Buttons.
+// ゲームにあったボタンセットを生成します。
+
+function getButtonSetForSTG(){
+  // ここで作る！！
+  const ox = 0;
+  const oy = 320;
+  const w = 480;
+  const h = 220;
+  let btnSet = new ButtonSet(ox, oy, w, h);
+  btnSet.registButton(new Button(30, 30, 120, 160));
+  btnSet.registButton(new Button(180, 30, 120, 160));
+  btnSet.registButton(new Button(330, 30, 120, 160));
+  return btnSet; // はやっ
+}
 
 // --------------------------------------------------------------------------------------- //
 // Interaction.（クリックやキー入力の関数）
