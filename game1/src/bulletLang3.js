@@ -277,6 +277,14 @@ class System{
     this.unitArray.loopReverse("eject");
     this.particleArray.loopReverse("eject");
   }
+  keyAction(code){
+    // とりあえずシフトキーのときにショットチェンジ
+    // 戻り値は次のシーン（シーン変更しないときは""を返す）
+    if(code === K_SHIFT){
+      this.player.shiftPattern();
+    }
+    return "";
+  }
 	draw(gr){
     gr.background(this.backgroundColor); // こっちで背景色設定
 		this.player.draw(gr);
@@ -303,20 +311,20 @@ class System{
     // それには判定順を考える。まずIS_GAMEOVERがtrueかどうか見てtrueならreturn 2;
     // そのあとでIS_CLEARかどうか見てtrueならreturn 1;
     // そのあとでreturn 0;すればOK.
-    let _IS_CLEAR = true;
-    let _IS_GAMEOVER = this.player.isDead();
+    let clearFlag = true;
+    let gameoverFlag = this.player.isDead();
     for(let u of this.unitArray){
       const flag = u.getCollisionFlag();
       if((flag !== PLAYER) && (flag !== PLAYER_BULLET)){
-        _IS_CLEAR = false;
+        clearFlag = false;
       }
     }
-    if(_IS_GAMEOVER){
-      return 2;
-    }else if(_IS_CLEAR){
-      return 1;
+    if(gameoverFlag){
+      return IS_GAMEOVER;
+    }else if(clearFlag){
+      return IS_CLEAR;
     }
-    return 0;
+    return IS_IN_BATTLE;
   }
   registUnitColors(){
     // 第3引数：damageFactor, 第4引数：lifeFactor. バランス調整が課題。
@@ -897,6 +905,14 @@ class Particle{
 // サイズはsmall, middle, large, hugeの4種類。
 
 // colliderはDrawShapeをセットするときに初期設定する感じ。
+
+// ここを画像読み込みでたとえばグラデーション付きの四角形とか、まあ、適当な形、にすると。
+// lifeもdamageもそれに応じたアレにするなど。あるいはポイントスプライトで大量描画・・んー。
+// 透明度とか回転はどうするのか・・んー。透明度はそもそも、あーそうか、使ってない。回転については、
+// 200回も300回もrotate呼び出すの・・は、特に問題ない。pushpopを多用しなければ大丈夫のはず。だから、
+// 元画像を回転させてグラフィックに落としてそれを貼り付ければいいんじゃない。
+// そんな感じ。だから、こっちにグラフィックを用意して、あっちの（各ユニットの）ベースグラフィックを毎フレーム（clear後に）回転させて、
+// こっちからそこに落とせばいい。で、いいはず。。
 
 class DrawShape{
   constructor(){

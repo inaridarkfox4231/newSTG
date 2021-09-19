@@ -171,7 +171,8 @@ class PlayScene extends Scene{
   	weaponData[weaponCapacity++] = {
   		color:"green",
   		action:{
-  			main:[{deco:{color:"green", shape:"starSmall"}}, {catch:"a"}, {fire:""}, {shotDirection:["set", [0, 360]]}, {wait:1}, {loop:INF, back:"a"}]
+  			main:[{deco:{color:"green", shape:"starSmall"}}, {catch:"a"}, {fire:""},
+              {shotDirection:["set", [0, 360]]}, {wait:1}, {loop:INF, back:"a"}]
   		}
   	}
 
@@ -209,9 +210,7 @@ class PlayScene extends Scene{
   keyAction(code){
     // systemに丸投げの方が再利用性高いんじゃないかな。ここに個別の処理書いちゃうのはまずいかも。んー。
     // でも遷移とかあれだね・・じゃあ遷移するかどうかのフラグを受け取ることにするかな。
-    if(code === K_SHIFT){
-      this._system.player.shiftPattern();
-    }
+    this.setNextScene(this._system.keyAction(code));
   }
   clickAction(){
   }
@@ -245,7 +244,9 @@ class PauseScene extends Scene{
     super(_node);
     this.name = "pause";
   }
-  prepare(_scene = undefined){ /* 遷移時に必ず実行される。前のシーンの情報を元に何かする */ }
+  prepare(_scene = undefined){
+
+  }
   keyAction(code){ /* キーイベント */}
 	clickAction(){ /* マウスクリックイベント */ }
 	update(){}
