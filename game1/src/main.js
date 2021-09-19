@@ -32,6 +32,8 @@ const CANVAS_W = 480;
 const CANVAS_H = 640;
 
 // KEYCODE定数
+// ああなるほど、これシステム側に書かないといけないんだ・・・
+
 const K_ENTER = 13;
 const K_RIGHT = 39;
 const K_LEFT = 37;
@@ -230,8 +232,8 @@ class PlayScene extends Scene{
     this._system.setPattern(DEFAULT_PATTERN_INDEX);
   }
   keyAction(code){
-    // CTRLキーでポーズに遷移する予定
-    // シフトキーでショットチェンジ（予定）
+    // systemに丸投げの方が再利用性高いんじゃないかな。ここに個別の処理書いちゃうのはまずいかも。んー。
+    // でも遷移とかあれだね・・じゃあ遷移するかどうかのフラグを受け取ることにするかな。
     if(code === K_SHIFT){
       this._system.player.shiftPattern();
     }
@@ -243,6 +245,8 @@ class PlayScene extends Scene{
     // thisを渡すのはシーンの遷移をさせるためではないかと（知るか）
     this._system.update(this);
     const flag = this._system.getFinishFlag();
+    // ここら辺のコードは再利用が効きそう
+    // もっとも次のステージに移る際とかは違う処理が必要かもだけど
     if(flag === IS_CLEAR){ this.setNextScene("clear"); }
     if(flag === IS_GAMEOVER){ this.setNextScene("gameover"); }
   }
@@ -304,6 +308,7 @@ class ClearScene extends Scene{
   }
   update(){
     // 特に・・アニメーションあるなら？そういうのを？花火とか。
+    // プレイ画面におっかぶせるんだったら何かしたいよね。文字出すだけじゃなくて。おいおいね・・
     this._system.update();
   }
   draw(){
@@ -341,7 +346,7 @@ class GameoverScene extends Scene{
   clickAction(){
   }
   update(){
-    // 特に・・アニメーションあるなら？そういうのを？花火とか。
+    // ゲームオーバー感を演出する何か・・まあ無くてもいい気も。
     this._system.update();
   }
   draw(){
