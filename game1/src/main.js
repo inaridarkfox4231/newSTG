@@ -26,32 +26,7 @@ let myGame;
 
 // --------------------------------------------------------------------------------------- //
 // Constants.（各種定数）
-
-// キャンバスサイズ
-const CANVAS_W = 480;
-const CANVAS_H = 640;
-
-// KEYCODE定数
-// ああなるほど、これシステム側に書かないといけないんだ・・・
-
-const K_ENTER = 13;
-const K_RIGHT = 39;
-const K_LEFT = 37;
-const K_UP = 38;
-const K_DOWN = 40;
-const K_SPACE = 32;
-const K_SHIFT = 16; // シフトキー。
-const K_CTRL = 17; // コントロールキー。今回はこれをポーズに使う。
-
-// INFはsystem内で使う
-const INF = Infinity; // 長いので
-// パターンのデフォルトだけどまあそのうち・・うん、
-const DEFAULT_PATTERN_INDEX = 0;
-// フラグ
-const IS_IN_BATTLE = 0;
-const IS_CLEAR = 1;
-const IS_GAMEOVER = 2;
-
+// 別コードで。
 
 // --------------------------------------------------------------------------------------- //
 // Game.（Sceneを統括する。切り替えなどを行う。）

@@ -17,21 +17,7 @@
 
 // ---------------------------------------------------------------------------------------- //
 // system constants.
-
-const EMPTY_SLOT = Object.freeze(Object.create(null)); // ダミーオブジェクト
-
-// 衝突判定用フラグ(collisionFlag)
-const OFF = 0;  // たとえばボスとかフラグをオフにしたうえで大きいパーティクル作る、とか出来る（予定）
-const ENEMY_BULLET = 1;
-const PLAYER_BULLET = 2;
-const ENEMY = 3;
-const PLAYER = 4;
-
-const STAR_FACTOR = 2.618033988749895; // 1 + 2 * cos(36).
-// cosとsinの0, 72, 144, 216, 288における値
-const COS_PENTA = [1, 0.30901699437494745, -0.8090169943749473, -0.8090169943749473, 0.30901699437494745];
-const SIN_PENTA = [0, 0.9510565162951535, 0.5877852522924732, -0.587785252292473, -0.9510565162951536];
-const ROOT_THREE_HALF = 0.8660254037844386; // √3/2.
+// 別コードでまとめる。
 
 // 以下の定数はnwayやradialにおいて入れ子を作る際に、catch-backでループを戻るときの識別子を作るための変数で、
 // 際限なく増えていく。理論上は無限まで。まあそんな増えないだろうと。
@@ -41,7 +27,7 @@ let radialId = 0;
 let lineId = 0;  // catchの度に増やしていく
 
 // ここから下にbulletLanguage関連を移植する
-// まあ紛らわしいしbulletLanguage内ではentityを使うようにするか・・
+// まあ紛らわしいしbulletLanguage内ではmySystemを使うようにするか・・
 // エイリアスを別に用意するのがいいのかどうかについては知らない（教えて）
 
 // ---------------------------------------------------------------------------------------- //
@@ -54,12 +40,12 @@ function createSystem(w, h, unitCapacity){
   window["STAY_MOVE"] = new StayMove();
   window["GO_MOVE"] = new GoMove();
   let _system = new System();
-  window["entity"] = _system;
+  window["mySystem"] = _system; // 名前がやばいので・・mySystemとかにした方がいいかも。entityはまずい。
   // デフォルトカラーとシェイプ
-  window["SQUARE_MIDDLE"] = entity.drawShape["squareMiddle"];
-  window["WEDGE_SMALL"] = entity.drawShape["wedgeSmall"];
-  window["PL_BLUE"] = entity.drawColor["plblue"];
-  window["BLUE"] = entity.drawColor["blue"];
+  window["SQUARE_MIDDLE"] = mySystem.drawShape["squareMiddle"];
+  window["WEDGE_SMALL"] = mySystem.drawShape["wedgeSmall"];
+  window["PL_BLUE"] = mySystem.drawColor["plblue"];
+  window["BLUE"] = mySystem.drawColor["blue"];
   // オブジェクトプール
   window["unitPool"] = new ObjectPool(() => { return new Unit(); }, unitCapacity);
   // デフォルトクラス
@@ -134,7 +120,6 @@ class System{
   registDrawGroup(unit){
     // colorから名前を引き出す。
     let name = unit.color.name;
-    //if(unit.collider.type === "laser"){ name = "laser"; } // laserは別立て描画
 
     if(!this.drawGroup.hasOwnProperty(name)){
       this.drawGroup[name] = new CrossReferenceArray();
@@ -296,9 +281,8 @@ class System{
     gr.background(this.backgroundColor); // こっちで背景色設定
 		this.player.draw(gr);
     Object.keys(this.drawGroup).forEach((name) => {
-      //if(name !== "laser"){ fill(this.drawColor[name]); }
       gr.fill(this.drawColor[name]);
-      this.drawGroup[name].loop("draw", [gr]); // 色別に描画(laserは別立て)
+      this.drawGroup[name].loop("draw", [gr]); // 色別に描画
     })
     // particleの描画(noStroke()を忘れないこと)
     gr.noFill();
@@ -405,8 +389,8 @@ function createUnit(pattern){
   let newUnit = unitPool.use();
   newUnit.initialize();
   newUnit.setPattern(pattern);
-  entity.unitArray.add(newUnit);
-  entity.registDrawGroup(newUnit);
+  mySystem.unitArray.add(newUnit);
+  mySystem.registDrawGroup(newUnit);
   // 色、形についてはsetPatternで行う感じ。
 }
 
@@ -418,7 +402,7 @@ function createParticle(unit, target, sizeFactor, life, speed, count){
   const size = unit.shape.size * sizeFactor;  // やられる時は0.7, ダメージ時は2.0で。
   const _color = unit.color;
   let newParticle = new Particle(target.position.x, target.position.y, size, _color, life, speed, count);
-  entity.particleArray.add(newParticle);
+  mySystem.particleArray.add(newParticle);
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -496,9 +480,9 @@ class SelfUnit{
     // shotMoveにする。behaviorは廃止。
     this.shotMove = (shotMove !== undefined ? ptn.shotMove : GO_MOVE);
     this.shotAction = []; // action内で設定する。
-    this.shotColor = (shotColor !== undefined ? ptn.shotColor : entity.drawColor["black"]);
-    this.color = (color !== undefined ? ptn.color : entity.drawColor["black"]);
-    this.shotShape = (shotShape !== undefined ? ptn.shotShape : entity.drawShape["wedgeSmall"]);
+    this.shotColor = (shotColor !== undefined ? ptn.shotColor : mySystem.drawColor["black"]);
+    this.color = (color !== undefined ? ptn.color : mySystem.drawColor["black"]);
+    this.shotShape = (shotShape !== undefined ? ptn.shotShape : mySystem.drawShape["wedgeSmall"]);
     this.shotDelay = (shotDelay !== undefined ? ptn.shotDelay : 0);
     this.shotDistance = 0; // これがないと発射できないよ
     // actionをセット。
@@ -537,7 +521,7 @@ class SelfUnit{
     if(this.life > 0){ return; }
     // パーティクル出して。
     const newParticle = new Particle(this.position.x, this.position.y, 20, this.color);
-    entity.particleArray.add(newParticle);
+    mySystem.particleArray.add(newParticle);
     this.life = 0;
     this.vanish = true;
   }
@@ -1129,46 +1113,7 @@ class DrawCherryShape extends DrawShape{
 // 先端とunit.positionとの距離を指定してコンストラクトする。剣先からなんか出す場合の参考にする。
 
 // レーザー廃止
-// レーザーはparent使おうかな
-// size:8, 16, 24, 48.
-/*
-class DrawLaserShape extends DrawShape{
-  constructor(size){
-    super();
-    this.colliderType = "laser";
-    this.size = size;
-    this.damage = size * 0.1; // スリップダメージ
-  }
-  set(unit){
-    unit.collider = new LaserCollider();
-    unit.collider.update(unit.position.x, unit.position.y,
-                         unit.parent.position.x, unit.parent.position.y, this.size);
-  }
-  draw(unit){
-    // 四角形でいいよね。
-    // 見た目変えようかな。真ん中に行くほど白っぽい感じに。
-    const r = red(unit.color);
-    const g = green(unit.color);
-    const b = blue(unit.color);
-    const {x, y} = unit.position;
-    const {x:px, y:py} = unit.parent.position;
-    const direction = atan2(y - py, x - px);
-    let dx = cos(direction) * this.size;
-    let dy = sin(direction) * this.size;
-    fill(r, g, b);
-    quad(x - dy, y + dx, x + dy, y - dx, px + dy, py - dx, px - dy, py + dx);
-    fill(85 + r * 2 / 3, 85 + g * 2 / 3, 85 + b * 2 / 3);
-    dx *= 0.66; dy *= 0.66;
-    quad(x - dy, y + dx, x + dy, y - dx, px + dy, py - dx, px - dy, py + dx);
-    fill(170 + r / 3, 170 + g / 3, 170 + b / 3);
-    dx *= 0.5; dy *= 0.5;
-    quad(x - dy, y + dx, x + dy, y - dx, px + dy, py - dx, px - dy, py + dx);
-    fill(255);
-    dx *= 0.33; dy *= 0.33;
-    quad(x - dy, y + dx, x + dy, y - dx, px + dy, py - dx, px - dy, py + dx);
-  }
-}
-*/
+
 // ダメージ計算
 function calcDamage(_shape, _color){
   return _shape.damage * _color.damageFactor;
@@ -1392,60 +1337,6 @@ class CircleCollider extends Collider{
 	}
 }
 
-// laser.
-// 四角形と交わる線分って割り出すのどうやるんよ・・んー。
-// 端点は常に・・横か縦でなければ。
-// (x, y)はレーザーの先端のunitのpositionでpx, pyは作った時のparentのpositionになる。
-// そこから画面内に収まるような2点の位置を計算してx, y, px, pyの値とする感じ・・で、wも設定。
-// inFrameやめようと思ったけど、端点が作るマージンwの長方形との交わりくらいは取ってもいいでしょ。
-// left:x-wと0のmax,top:y-wと0のmax,right:x+wとAREA_WIDTH-1のmin,bottom:y+wとAREA_HEIGHT-1のmin.
-/*
-class LaserCollider extends Collider{
-  constructor(x, y, px, py, w){
-    super();
-    this.type = "laser";
-    this.x = x;
-    this.y = y;
-    this.px = px;
-    this.py = py;
-    this.w = w; // 幅
-    // laserは衝突しても消えないので、フレームごとに衝突したcolliderのindexを覚えておく必要がある。
-    // 毎回衝突判定の前に空っぽにして、衝突の度にそれを放り込んで照合し既に入ってたらスルー。
-    this.hitIndexList = [];
-  }
-  get left(){ return Math.max(0, Math.min(this.x - this.w, this.px - this.w)); }
-	get right(){ return Math.min(AREA_WIDTH - 1, Math.max(this.x + this.w, this.px + this.w)); }
-	get top(){ return Math.max(0, Math.min(this.y - this.w, this.py - this.w)); }
-	get bottom(){ return Math.min(AREA_HEIGHT - 1, Math.max(this.y + this.w, this.py + this.w)); }
-  inFrame(){
-    const flag1 = (this.left < AREA_WIDTH && this.top < AREA_HEIGHT);
-    const flag2 = (this.right > 0 && this.bottom > 0);
-    return flag1 && flag2;
-  }
-  update(x, y, px, py, w = -1){
-    this.x = x;
-    this.y = y;
-    this.px = px;
-    this.py = py;
-    if(w > 0){ this.w = w; }
-    this.hitIndexList = []; // 当たったcolliderのindexを放り込む
-  }
-  registIndex(index){
-    this.hitIndexList.push(index);
-  }
-  hasIndex(index){
-    // forEach内でreturnを使っても関数を抜けることは出来ません（重要）
-    // ループ処理の中で関数を終えるときは必ずfor文にしましょう！forEachやめろ！
-    for(let i = 0; i < this.hitIndexList.length; i++){
-      const havingIndex = this.hitIndexList[i];
-      if(index === havingIndex){
-        return true;
-      }
-    }
-    return false;
-  }
-}
-*/
 class CollisionDetector {
   // 当たり判定を検出する。
   detectCollision(collider1, collider2) {
@@ -1606,13 +1497,13 @@ class CrossReferenceArray extends Array{
 
 // 自機方向の取得
 function getPlayerDirection(pos, margin = 0){
-  const {x, y} = entity.player.position;
+  const {x, y} = mySystem.player.position;
   return atan2(y - pos.y, x - pos.x) + margin * random(-1, 1);
 }
 
 // 自機方向の2乗の取得
 function getPlayerDistSquare(pos){
-  const {x, y} = entity.player.position;
+  const {x, y} = mySystem.player.position;
   return pow(pos.x - x, 2) + pow(pos.y - y, 2);
 }
 
@@ -1766,8 +1657,8 @@ function parsePatternSeed(seed){
   // 色、形関連
   // ここでオブジェクトにしてしまう（色や形はこのタイミングでは登録済み）
   // seed[propName]は文字列（キー）なのでこれを元にオブジェクトを召喚する。
-  if(seed.color !== undefined){ ptn.color = entity.drawColor[seed.color]; }
-  if(seed.shape !== undefined){ ptn.shape = entity.drawShape[seed.shape]; }
+  if(seed.color !== undefined){ ptn.color = mySystem.drawColor[seed.color]; }
+  if(seed.shape !== undefined){ ptn.shape = mySystem.drawShape[seed.shape]; }
 
   // fireDef廃止。
 
@@ -2195,10 +2086,10 @@ function execute(unit, command){
     return loopAdvanceFlag; // フラグによる
   }
   // 色、形.
-  // styleには文字列が入ってるのでentity経由でオブジェクトを召喚する。
+  // styleには文字列が入ってるのでmySystem経由でオブジェクトを召喚する。
   if(["shotColor", "shotShape"].includes(_type)){
-    if(_type === "shotColor"){ unit.shotColor = entity.drawColor[command.style]; }
-    else if(_type === "shotShape"){ unit.shotShape = entity.drawShape[command.style]; }
+    if(_type === "shotColor"){ unit.shotColor = mySystem.drawColor[command.style]; }
+    else if(_type === "shotShape"){ unit.shotShape = mySystem.drawShape[command.style]; }
     unit.actionIndex++;
     return true; // ループは抜けない
   }
@@ -2292,8 +2183,8 @@ function execute(unit, command){
     // ショットいろいろ
     if(command.hasOwnProperty("speed")){ unit.shotSpeed = command.speed; }
     if(command.hasOwnProperty("direction")){ unit.shotDirection = command.direction; }
-    if(command.hasOwnProperty("color")){ unit.shotColor = entity.drawColor[command.color]; }
-    if(command.hasOwnProperty("shape")){ unit.shotShape = entity.drawShape[command.shape]; }
+    if(command.hasOwnProperty("color")){ unit.shotColor = mySystem.drawColor[command.color]; }
+    if(command.hasOwnProperty("shape")){ unit.shotShape = mySystem.drawShape[command.shape]; }
     unit.actionIndex++;
     return true;
   }
@@ -2311,8 +2202,8 @@ function execute(unit, command){
     }else if(command.mode === "approach"){
       // 自機のsize*5に近付いたら挙動を進める
       // 5とか10とかはオプションでなんとかならないかな。close, farみたいに。ひとつくらい、いいでしょ。
-      const {x, y} = entity.player.position;
-      const size = entity.player.size;
+      const {x, y} = mySystem.player.position;
+      const size = mySystem.player.size;
       if(dist(x, y, unit.position.x, unit.position.y) < size * 5){
         unit.actionIndex++;
         return true; // ループは抜けない。すすめ。
