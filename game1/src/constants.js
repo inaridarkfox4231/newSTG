@@ -23,6 +23,9 @@ const ROOT_THREE_HALF = 0.8660254037844386; // √3/2.
 const CANVAS_W = 480;
 const CANVAS_H = 640;
 
+// ステージ数
+const MAX_STAGEID = 3;
+
 // KEYCODE定数
 // ああなるほど、これシステム側に書かないといけないんだ・・・
 

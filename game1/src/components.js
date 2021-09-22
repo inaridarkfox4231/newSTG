@@ -54,19 +54,30 @@ class ButtonSet{
   registButton(btn){
     this.buttons.push(btn);
   }
-  getButtonIndex(inputX, inputY){
-    // mx, myはこのセット上におけるマウス位置の座標。オフセットは考慮・・ん？こっちで計算できるか。んー・・
-    let mx = inputX - this.offset.x;
-    let my = inputY - this.offset.y;
-    // エリア外で-1で抜けちゃうとエリア外に離れたときにボタンの大きさが元に戻らないバグが出ちゃう
+  getButtonIndex(data){
     let btnId = -1;
-    for(let btn of this.buttons){
-      // btnに(mx, my)を渡す。あとはオフセットに基づいてhoverかどうかが判定され、拡縮。
-      // btnはisHoverを返す。trueならbtnからidを取得して最後にそれを返す。
-      // なおボタンは位置が重ならないことが想定されているのでidの重複は起こらないものとする。
-      const _isHover = btn.getIsHover(mx, my);
-      btn.calcScaleCount(_isHover);
-      if(_isHover){ btnId = btn.getIndex(); }
+    if(data.hasOwnProperty("pos")){
+      // マウス位置などで指定するモード
+      // mx, myはこのセット上におけるマウス位置の座標。オフセットは考慮・・ん？こっちで計算できるか。んー・・
+      let mx = data.pos.x - this.offset.x;
+      let my = data.pos.y - this.offset.y;
+      // エリア外で-1で抜けちゃうとエリア外に離れたときにボタンの大きさが元に戻らないバグが出ちゃう
+      for(let btn of this.buttons){
+        // btnに(mx, my)を渡す。あとはオフセットに基づいてhoverかどうかが判定され、拡縮。
+        // btnはisHoverを返す。trueならbtnからidを取得して最後にそれを返す。
+        // なおボタンは位置が重ならないことが想定されているのでidの重複は起こらないものとする。
+        const _isHover = btn.getIsHover(mx, my);
+        btn.calcScaleCount(_isHover);
+        if(_isHover){ btnId = btn.getIndex(); }
+      }
+    }else if(data.hasOwnProperty("id")){
+      // idで直接指定するモード（戻り値に意味はない）
+      for(let btn of this.buttons){
+        const currentIndex = btn.getIndex();
+        const _isHover = (currentIndex === data.id);
+        btn.calcScaleCount(_isHover);
+        if(_isHover){ btnId = currentIndex; }
+      }
     }
     return btnId;
   }

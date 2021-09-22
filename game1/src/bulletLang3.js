@@ -66,7 +66,9 @@ class System{
 	constructor(){
     this.unitArray = new CrossReferenceArray();
     this.particleArray = new SimpleCrossReferenceArray();
-    this.backgroundColor = color(220, 220, 255); // デフォルト（薄い青）
+    //this.backgroundColor = color(220, 220, 255); // デフォルト（薄い青）
+    this.backgroundImage = createGraphics(AREA_WIDTH, AREA_HEIGHT); // 背景画像
+    this.backgroundData = []; // 背景画像の配列
     this.infoColor = color(0); // デフォルト（情報表示の色、黒）
     this.drawColor = {}; // 色の辞書
     this.registUnitColors();
@@ -83,6 +85,9 @@ class System{
     this.seedArray = []; // Systemに持たせました。
     this.seedCapacity = 0;
 	}
+  registBackgrounds(bgs){
+    this.backgroundData.push(...bgs);
+  }
   addPatternSeed(seed){
     // なんかデフォルトを設定するとかここでできそうな。たとえばnwayのとか。radialとか。
     this.seedArray.push(seed);
@@ -98,11 +103,16 @@ class System{
     // パターンを作る部分をメソッド化
     if(this.seedArray[newPatternIndex] === undefined){ return; } // 存在しない時。
     let seed = this.seedArray[newPatternIndex];
-    // 背景色
-    if(seed.hasOwnProperty("bgColor")){
-      this.backgroundColor = this.drawColor[seed.bgColor];
+    // 背景
+    if(seed.hasOwnProperty("bgId")){
+      this.backgroundImage.image(this.backgroundData[seed.bgId], 0, 0);
+    }
+    else if(seed.hasOwnProperty("bgColor")){
+      //this.backgroundColor = this.drawColor[seed.bgColor];
+      this.backgroundImage.background(this.drawColor[seed.bgColor]);
     }else{
-      this.backgroundColor = color(220, 220, 255); // 背景色のデフォルト
+      //this.backgroundColor = color(220, 220, 255); // 背景色のデフォルト
+      this.backgroundImage.background(220, 220, 255);
     }
     // 情報表示の色
     if(seed.hasOwnProperty("infoColor")){
@@ -286,7 +296,8 @@ class System{
     return "";
   }
 	draw(gr){
-    gr.background(this.backgroundColor); // こっちで背景色設定
+    //gr.background(this.backgroundColor); // こっちで背景色設定
+    gr.image(this.backgroundImage, 0, 0);
 		this.player.draw(gr);
     Object.keys(this.drawGroup).forEach((name) => {
       gr.fill(this.drawColor[name]);

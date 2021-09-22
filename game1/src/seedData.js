@@ -53,7 +53,7 @@ function getPatternSeeds(){
   // 新しいcircularの実験中。FALさんの4を書き直し。
   // shotDirectionの初期設定は撃ちだした瞬間の進行方向。
   seeds.push({
-    x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgColor:"white", color:"green",
+    x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgId:0, bgColor:"white", color:"green",
     action:{
       main:[{shotAction:"sweeping"}, {deco:{color:"black", shape:"rectSmall"}}, {radial:{count:4}}],
       sweeping:[{speed:["set", 0.001, 30]}, {move:"circular", bearing:-3},
@@ -66,7 +66,7 @@ function getPatternSeeds(){
   // とりあえず水増し
 
   seeds.push({
-    x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgColor:"plorange", color:"green",
+    x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgId:1, bgColor:"plorange", color:"green",
     action:{
       main:[{shotAction:"sweeping"}, {deco:{color:"black", shape:"rectSmall"}}, {radial:{count:4}}],
       sweeping:[{speed:["set", 0.001, 30]}, {move:"circular", bearing:-3},
@@ -77,7 +77,7 @@ function getPatternSeeds(){
   });
 
   seeds.push({
-    x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgColor:"plgreen", color:"green",
+    x:0.5, y:0.3, shotSpeed:10, collisionFlag:ENEMY, bgId:2, bgColor:"plgreen", color:"green",
     action:{
       main:[{shotAction:"sweeping"}, {deco:{color:"black", shape:"rectSmall"}}, {radial:{count:4}}],
       sweeping:[{speed:["set", 0.001, 30]}, {move:"circular", bearing:-3},

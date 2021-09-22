@@ -22,7 +22,8 @@
 // --------------------------------------------------------------------------------------- //
 // Global.
 
-let myGame;
+let myGame; // ノード
+let preload_bgs = []; // 背景
 
 // --------------------------------------------------------------------------------------- //
 // Constants.（各種定数）
@@ -106,7 +107,7 @@ class TitleScene extends Scene{
     this.resetButtonIndex();
   }
   resetButtonIndex(){
-    this.buttonIndex = -1;
+    this.buttonIndex = 0;
   }
   getButtonIndex(){
     // play側で取得してどのステージにするのか決める感じ
@@ -114,6 +115,8 @@ class TitleScene extends Scene{
   }
   keyAction(code){
     if(code === K_ENTER && this.buttonIndex >= 0){ this.setNextScene("play"); }
+    else if(code === K_RIGHT){ this.buttonIndex = Math.min(this.buttonIndex + 1, MAX_STAGEID - 1); }
+    else if(code === K_LEFT){ this.buttonIndex = Math.max(this.buttonIndex - 1, 0); }
   }
 	clickAction(){
   }
@@ -121,7 +124,8 @@ class TitleScene extends Scene{
     // タイトルアニメーションとかですかね。
     // その場合背景とは別にイメージを用意してそっちを更新しつつレイヤーごとに描画ってなると思う。
     // そっちをテンプレにすべきかどうか思案。というか背景が更新される形？んんん・・
-    this.buttonIndex = this.btnSet.getButtonIndex(mouseX, mouseY);
+    //this.buttonIndex = this.btnSet.getButtonIndex({pos:{x:mouseX, y:mouseY}});
+    this.btnSet.getButtonIndex({id:this.buttonIndex});
   }
   draw(){
     clear();
@@ -151,6 +155,7 @@ class PlayScene extends Scene{
     super(_node);
     this.name = "play";
     this._system = createSystem(CANVAS_W, CANVAS_H, 1024);
+    this._system.registBackgrounds(preload_bgs);
     // ここでパターンを生成する感じ。
     this.generatePattern();
   }
@@ -315,6 +320,10 @@ class GameoverScene extends Scene{
 
 function preload(){
   // 種類ごとに処理を分けた方がいいかも
+  // 背景のロード
+  for(let i = 0; i < MAX_STAGEID; i++){
+    preload_bgs.push(loadImage("https://inaridarkfox4231.github.io/assets/newSTG/backgroundImages/bg" + i + ".png"));
+  }
 }
 
 // --------------------------------------------------------------------------------------- //
