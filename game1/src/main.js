@@ -124,7 +124,6 @@ class TitleScene extends Scene{
     // タイトルアニメーションとかですかね。
     // その場合背景とは別にイメージを用意してそっちを更新しつつレイヤーごとに描画ってなると思う。
     // そっちをテンプレにすべきかどうか思案。というか背景が更新される形？んんん・・
-    //this.buttonIndex = this.btnSet.getButtonIndex({pos:{x:mouseX, y:mouseY}});
     this.btnSet.getButtonIndex({id:this.buttonIndex});
   }
   draw(){

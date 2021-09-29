@@ -66,7 +66,6 @@ class System{
 	constructor(){
     this.unitArray = new CrossReferenceArray();
     this.particleArray = new SimpleCrossReferenceArray();
-    //this.backgroundColor = color(220, 220, 255); // デフォルト（薄い青）
     this.backgroundImage = createGraphics(AREA_WIDTH, AREA_HEIGHT); // 背景画像
     this.backgroundData = []; // 背景画像の配列
     this.infoColor = color(0); // デフォルト（情報表示の色、黒）
@@ -108,11 +107,9 @@ class System{
       this.backgroundImage.image(this.backgroundData[seed.bgId], 0, 0);
     }
     else if(seed.hasOwnProperty("bgColor")){
-      //this.backgroundColor = this.drawColor[seed.bgColor];
       this.backgroundImage.background(this.drawColor[seed.bgColor]);
     }else{
-      //this.backgroundColor = color(220, 220, 255); // 背景色のデフォルト
-      this.backgroundImage.background(220, 220, 255);
+      this.backgroundImage.background(220, 220, 255); // 背景色デフォルト（薄い青）
     }
     // 情報表示の色
     if(seed.hasOwnProperty("infoColor")){
@@ -296,8 +293,9 @@ class System{
     return "";
   }
 	draw(gr){
-    //gr.background(this.backgroundColor); // こっちで背景色設定
+    // 背景を設定
     gr.image(this.backgroundImage, 0, 0);
+    // プレイヤーを描画
 		this.player.draw(gr);
     Object.keys(this.drawGroup).forEach((name) => {
       gr.fill(this.drawColor[name]);
